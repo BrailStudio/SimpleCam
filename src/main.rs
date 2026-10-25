@@ -17,10 +17,8 @@ use global_hotkey::{
 };
 use windows_capture::{
     capture::{CaptureControl, Context, GraphicsCaptureApiHandler},
-    encoder::{
-        AudioSettingsBuilder, ContainerSettingsBuilder, VideoEncoder, VideoSettingsBuilder,
-        VideoSettingsSubType,
-    },
+    encoder::{AudioSettingsBuilder, ContainerSettingsBuilder, VideoEncoder, VideoSettingsBuilder,
+        VideoSettingsSubType,},
     frame::Frame,
     graphics_capture_api::InternalCaptureControl,
     monitor::Monitor,
@@ -52,7 +50,8 @@ impl GraphicsCaptureApiHandler for Capture {
 
     fn new(ctx: Context<Self::Flags>) -> Result<Self, Self::Error> {
         let f = ctx.flags;
-        let encoder = VideoSettingsBuilder::new(f.width, f.height).sub_type(VideoSettingsSubType::H264),
+        let encoder = VideoEncoder::new(
+            VideoSettingsBuilder::new(f.width, f.height).sub_type(VideoSettingsSubType::H264),
             AudioSettingsBuilder::default().disabled(true),
             ContainerSettingsBuilder::default(),
             &f.path,
