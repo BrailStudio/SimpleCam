@@ -21,7 +21,10 @@ use windows_capture::{
     frame::Frame,
     graphics_capture_api::InternalCaptureControl,
     monitor::Monitor,
-    settings::{ColorFormat, CursorCaptureSettings, DrawBorderSettings, Settings},
+    settings::{
+        ColorFormat, CursorCaptureSettings, DirtyRegionSettings, DrawBorderSettings,
+        MinimumUpdateIntervalSettings, SecondaryWindowSettings, Settings,
+    },
 };
 
 type Err = Box<dyn std::error::Error + Send + Sync>;
@@ -140,10 +143,13 @@ impl Recorder {
             width,
             height,
         };
-        let settings = Settings::new(
+                let settings = Settings::new(
             monitor,
             CursorCaptureSettings::WithCursor,
             DrawBorderSettings::WithoutBorder,
+            SecondaryWindowSettings::Default,
+            MinimumUpdateIntervalSettings::Default,
+            DirtyRegionSettings::Default,
             ColorFormat::Bgra8,
             flags,
         );
