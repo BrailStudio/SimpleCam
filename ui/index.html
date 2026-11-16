@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SimpleCam</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="SimpleCam" class="logo" />
+    <div>
+      <h1>SimpleCam</h1>
+      <p>Ultra lightweight screen recorder</p>
+    </div>
+    <span class="kbd" title="Global hotkey">F9</span>
+  </header>
+
+  <main>
+    <div class="seg" id="seg">
+      <button data-source="screen">Full screen</button>
+      <button data-source="window">Single window</button>
+    </div>
+
+    <section class="card">
+      <div class="row" id="row-monitor">
+        <label for="monitor">Display</label>
+        <select id="monitor" data-key="monitor" data-type="int"></select>
+      </div>
+      <div class="row" id="row-window">
+        <label for="window">Window</label>
+        <div class="inline">
+          <select id="window" data-key="window"></select>
+          <button id="refresh" class="ghost" title="Refresh window list">&#8635;</button>
+        </div>
+      </div>
+      <div class="row">
+        <label for="res">Resolution</label>
+        <select id="res" data-key="res" data-type="int"></select>
+      </div>
+      <div class="row">
+        <label for="fps">Frame rate</label>
+        <select id="fps" data-key="fps" data-type="int"></select>
+      </div>
+      <div class="row">
+        <label for="codec">Codec</label>
+        <select id="codec" data-key="codec">
+          <option value="h264">H.264 (most compatible)</option>
+          <option value="hevc">HEVC / H.265 (smaller files)</option>
+        </select>
+      </div>
+      <div class="row" id="row-quality">
+        <label for="quality">Quality</label>
+        <div class="inline">
+          <select id="quality" data-key="quality">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <label class="check"><input type="checkbox" id="custom" data-key="custom" data-type="bool" /> Custom</label>
+        </div>
+      </div>
+      <div class="row" id="row-mbps">
+        <label for="mbps">Bitrate <b id="mbps-val"></b></label>
+        <input type="range" id="mbps" min="0.5" max="100" step="0.5" data-key="mbps" data-type="float" />
+      </div>
+      <div class="row">
+        <label for="countdown">Countdown</label>
+        <select id="countdown" data-key="countdown" data-type="int">
+          <option value="0">Off</option>
+          <option value="1">3 seconds</option>
+          <option value="2">5 seconds</option>
+          <option value="3">10 seconds</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="folder">Save to</label>
+        <div class="inline">
+          <input type="text" id="folder" data-key="folder" spellcheck="false" />
+          <button id="browse" class="ghost">Browse</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card checks">
+      <label class="check"><input type="checkbox" data-key="cursor" data-type="bool" /> Capture mouse cursor</label>
+      <label class="check"><input type="checkbox" data-key="border" data-type="bool" /> Show yellow capture border</label>
+      <label class="check"><input type="checkbox" data-key="minimize" data-type="bool" /> Minimize while recording</label>
+      <label class="check"><input type="checkbox" data-key="onTop" data-type="bool" data-free="1" /> Keep SimpleCam on top</label>
+    </section>
+
+    <p id="preview" class="preview"></p>
+
+    <div class="actions">
+      <button id="main-btn" class="primary">Start recording</button>
+      <button id="open-folder" class="ghost">Open folder</button>
+      <button id="play-last" class="ghost" hidden>Show last</button>
+    </div>
+
+    <div class="timer" id="timer" hidden>00:00:00</div>
+    <p id="status" class="status">Ready. Press F9 to start or stop.</p>
+  </main>
+
+  <div id="overlay" hidden><span id="overlay-num">3</span></div>
+  <script src="main.js"></script>
+</body>
+</html>
