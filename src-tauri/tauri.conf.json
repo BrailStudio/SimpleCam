@@ -25,7 +25,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -38,19 +41,30 @@
     "shortDescription": "Ultra lightweight screen recorder",
     "longDescription": "SimpleCam is an ultra lightweight screen recorder for Windows. Record a full display or a single window from 144p up to 4K.",
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installMode": "both",
         "displayLanguageSelector": true,
-        "languages": ["English", "French", "German", "Spanish", "Arabic", "Russian", "SimpChinese", "Turkish"],
+        "languages": [
+          "English",
+          "French",
+          "German",
+          "Spanish",
+          "Arabic",
+          "Russian",
+          "SimpChinese",
+          "Turkish"
+        ],
         "startMenuFolder": "SimpleCam",
         "compression": "lzma",
-        "installerIcon": "icons/icon.ico",
-        "license": "../LICENSE"
+        "installerIcon": "icons/icon.ico"
       },
       "wix": {
         "language": "en-US"
       }
-    }
+    },
+    "licenseFile": "../LICENSE"
   }
 }
