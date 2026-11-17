@@ -1,6 +1,6 @@
 [package]
 name = "simplecam"
-version = "0.3.0"
+version = "0.4.0"
 description = "Ultra lightweight screen recorder for Windows"
 edition = "2021"
 

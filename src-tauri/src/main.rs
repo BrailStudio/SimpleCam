@@ -42,10 +42,63 @@ struct Config {
     hevc: bool,
     cursor: bool,
     border: bool,
+    compat: bool,
 }
 
 struct Recorder {
     encoder: Option<VideoEncoder>,
+    cfg: Config,
+    start: Option<Instant>,
+    next_idx: u64,
+    last: Vec<u8>,
+    cur: Vec<u8>,
+    have_last: bool,
+}
+
+/// Presentation timestamp (100 ns units) of frame number `idx` at a constant frame rate.
+fn ts(idx: u64, fps: u32) -> i64 {
+    (idx as i64) * 10_000_000 / fps as i64
+}
+
+/// Copy / scale a BGRA frame (with row padding) into a tightly packed BGRA buffer.
+fn scale_bgra(src: &[u8], sw: usize, sh: usize, pitch: usize, dst: &mut Vec<u8>, dw: usize, dh: usize) {
+    dst.resize(dw * dh * 4, 0);
+    if sw == 0 || sh == 0 {
+        return;
+    }
+    if sw == dw && sh == dh {
+        for y in 0..dh {
+            let s = y * pitch;
+            dst[y * dw * 4..(y + 1) * dw * 4].copy_from_slice(&src[s..s + dw * 4]);
+        }
+        return;
+    }
+    let xr = ((sw as u64) << 16) / dw as u64;
+    let yr = ((sh as u64) << 16) / dh as u64;
+    let mut xs: Vec<(usize, usize, u32)> = Vec::with_capacity(dw);
+    for dx in 0..dw {
+        let fx = (dx as u64 * xr + xr / 2).saturating_sub(1 << 15);
+        let x0 = ((fx >> 16) as usize).min(sw - 1);
+        let x1 = (x0 + 1).min(sw - 1);
+        xs.push((x0 * 4, x1 * 4, ((fx >> 8) & 0xff) as u32));
+    }
+    for dy in 0..dh {
+        let fy = (dy as u64 * yr + yr / 2).saturating_sub(1 << 15);
+        let y0 = ((fy >> 16) as usize).min(sh - 1);
+        let y1 = (y0 + 1).min(sh - 1);
+        let wy = ((fy >> 8) & 0xff) as u32;
+        let r0 = &src[y0 * pitch..y0 * pitch + sw * 4];
+        let r1 = &src[y1 * pitch..y1 * pitch + sw * 4];
+        let out = &mut dst[dy * dw * 4..(dy + 1) * dw * 4];
+        for (dx, &(a, b, wx)) in xs.iter().enumerate() {
+            let o = dx * 4;
+            for c in 0..4 {
+                let top = r0[a + c] as u32 * (256 - wx) + r0[b + c] as u32 * wx;
+                let bot = r1[a + c] as u32 * (256 - wx) + r1[b + c] as u32 * wx;
+                out[o + c] = ((top * (256 - wy) + bot * wy) >> 16) as u8;
+            }
+        }
+    }
 }
 
 impl GraphicsCaptureApiHandler for Recorder {
@@ -68,7 +121,15 @@ impl GraphicsCaptureApiHandler for Recorder {
             ContainerSettingsBuilder::default(),
             &c.path,
         )?;
-        Ok(Self { encoder: Some(encoder) })
+        Ok(Self {
+            encoder: Some(encoder),
+            cfg: c,
+            start: None,
+            next_idx: 0,
+            last: Vec::new(),
+            cur: Vec::new(),
+            have_last: false,
+        })
     }
 
     fn on_frame_arrived(
@@ -76,13 +137,63 @@ impl GraphicsCaptureApiHandler for Recorder {
         frame: &mut Frame,
         _ctl: InternalCaptureControl,
     ) -> Result<(), Self::Error> {
-        if let Some(e) = self.encoder.as_mut() {
-            e.send_frame(frame)?;
+        let Some(enc) = self.encoder.as_mut() else {
+            return Ok(());
+        };
+
+        // "Fast" mode: hand the GPU frame straight to the encoder.
+        if !self.cfg.compat {
+            enc.send_frame(frame)?;
+            return Ok(());
         }
+
+        // "Smooth" mode: system-memory BGRA frames + constant frame rate.
+        // Windows only delivers a frame when the screen changes, so gaps are
+        // filled by repeating the previous frame at exact intervals.
+        let start = *self.start.get_or_insert_with(Instant::now);
+        let fps = self.cfg.fps;
+        let idx = (start.elapsed().as_nanos() * fps as u128 / 1_000_000_000) as u64;
+
+        {
+            let mut fb = frame.buffer()?;
+            let (sw, sh, pitch) = (fb.width() as usize, fb.height() as usize, fb.row_pitch() as usize);
+            scale_bgra(
+                fb.as_raw_buffer(),
+                sw,
+                sh,
+                pitch,
+                &mut self.cur,
+                self.cfg.width as usize,
+                self.cfg.height as usize,
+            );
+        }
+
+        if self.have_last {
+            while self.next_idx < idx {
+                enc.send_frame_buffer(&self.last, ts(self.next_idx, fps))?;
+                self.next_idx += 1;
+            }
+        }
+        if idx >= self.next_idx {
+            enc.send_frame_buffer(&self.cur, ts(idx, fps))?;
+            self.next_idx = idx + 1;
+        }
+        std::mem::swap(&mut self.last, &mut self.cur);
+        self.have_last = true;
         Ok(())
     }
 
     fn on_closed(&mut self) -> Result<(), Self::Error> {
+        if self.cfg.compat && self.have_last {
+            if let (Some(start), Some(enc)) = (self.start, self.encoder.as_mut()) {
+                let fps = self.cfg.fps;
+                let end = (start.elapsed().as_nanos() * fps as u128 / 1_000_000_000) as u64;
+                while self.next_idx <= end {
+                    enc.send_frame_buffer(&self.last, ts(self.next_idx, fps))?;
+                    self.next_idx += 1;
+                }
+            }
+        }
         if let Some(e) = self.encoder.take() {
             e.finish()?;
         }
@@ -105,6 +216,7 @@ struct Options {
     custom_mbps: Option<f64>,
     cursor: bool,
     border: bool,
+    compat: bool,
     folder: String,
 }
 
@@ -205,6 +317,7 @@ fn build_config(o: &Options) -> Config {
         hevc: o.codec == "hevc",
         cursor: o.cursor,
         border: o.border,
+        compat: o.compat,
     }
 }
 
