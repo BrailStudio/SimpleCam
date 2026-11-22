@@ -339,7 +339,7 @@ fn draw_overlays(buf: &mut [u8], w: usize, h: usize, cfg: &Config) {
     };
     for y in y0..(y0 + box_h).min(h) {
         for x in x0..(x0 + box_w).min(w) {
-            let i = (y * w + x) * 4;
+            let i = ((h - 1 - y) * w + x) * 4;
             for c in 0..3 {
                 buf[i + c] = (buf[i + c] as u32 * 2 / 5) as u8;
             }
@@ -360,7 +360,7 @@ fn draw_overlays(buf: &mut [u8], w: usize, h: usize, cfg: &Config) {
                         for dx in 0..scale {
                             let (px, py) = (tx + col * scale + dx, ty + r * scale + dy);
                             if px < w && py < h {
-                                let i = (py * w + px) * 4;
+                                let i = ((h - 1 - py) * w + px) * 4;
                                 buf[i] = 255;
                                 buf[i + 1] = 255;
                                 buf[i + 2] = 255;
@@ -447,7 +447,8 @@ fn scale_bgra(
     if sw == dw && sh == dh {
         for y in 0..dh {
             let s = (cy + y) * pitch + cx * 4;
-            dst[y * dw * 4..(y + 1) * dw * 4].copy_from_slice(&src[s..s + dw * 4]);
+            let oy = dh - 1 - y;
+            dst[oy * dw * 4..(oy + 1) * dw * 4].copy_from_slice(&src[s..s + dw * 4]);
         }
         return;
     }
@@ -469,7 +470,8 @@ fn scale_bgra(
         let b1 = (cy + y1) * pitch + cx * 4;
         let r0 = &src[b0..b0 + sw * 4];
         let r1 = &src[b1..b1 + sw * 4];
-        let out = &mut dst[dy * dw * 4..(dy + 1) * dw * 4];
+        let oy = dh - 1 - dy;
+        let out = &mut dst[oy * dw * 4..(oy + 1) * dw * 4];
         for (dx, &(a, b, wx)) in xs.iter().enumerate() {
             let o = dx * 4;
             for c in 0..4 {
