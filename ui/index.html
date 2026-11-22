@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SimpleCam</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="menubar" id="menubar">
+    <div class="menu"><button class="mbtn">File</button><div class="drop">
+      <button data-act="record">Record / Stop<kbd class="k-rec">F9</kbd></button>
+      <button data-act="pause">Pause / Resume<kbd class="k-pause">F10</kbd></button>
+      <hr />
+      <button data-act="open-folder">Open recordings folder</button>
+      <button data-act="play-last">Play last recording</button>
+      <hr />
+      <button data-act="exit">Exit</button>
+    </div></div>
+    <div class="menu"><button class="mbtn">Region</button><div class="drop">
+      <button data-act="src-region">Region (drag to select)&hellip;</button>
+      <button data-act="src-window">Window</button>
+      <button data-act="src-screen">Full screen</button>
+      <hr />
+      <button data-act="refresh-windows">Refresh window list</button>
+    </div></div>
+    <div class="menu"><button class="mbtn">Options</button><div class="drop">
+      <button data-act="opt-video">Video&hellip;</button>
+      <button data-act="opt-audio">Audio&hellip;</button>
+      <button data-act="opt-cursor">Cursor&hellip;</button>
+      <button data-act="opt-overlay">Timestamp &amp; caption&hellip;</button>
+      <button data-act="opt-hotkeys">Hotkeys&hellip;</button>
+      <hr />
+      <button data-act="opt-program">Program options&hellip;</button>
+    </div></div>
+    <div class="menu"><button class="mbtn">Tools</button><div class="drop">
+      <button data-act="reset">Reset all settings</button>
+    </div></div>
+    <div class="menu"><button class="mbtn">Help</button><div class="drop">
+      <button data-act="about">About SimpleCam</button>
+    </div></div>
+  </nav>
+
+  <div class="toolbar">
+    <button id="btn-rec" class="tb rec" title="Record"><i class="ico-rec"></i>Record</button>
+    <button id="btn-pause" class="tb" title="Pause / Resume"><i class="ico-pause"></i><span id="pause-label">Pause</span></button>
+    <button id="btn-stop" class="tb" title="Stop"><i class="ico-stop"></i>Stop</button>
+    <span class="sep"></span>
+    <img src="logo.png" alt="SimpleCam" class="logo" />
+  </div>
+
+  <main>
+    <fieldset>
+      <legend>Capture area</legend>
+      <div class="radios" id="radios">
+        <label><input type="radio" name="source" value="region" /> Region</label>
+        <label><input type="radio" name="source" value="window" /> Window</label>
+        <label><input type="radio" name="source" value="screen" /> Full screen</label>
+      </div>
+
+      <div id="p-screen" class="panel">
+        <label>Display</label>
+        <select id="monitor" data-key="monitor" data-type="int"></select>
+      </div>
+      <div id="p-window" class="panel">
+        <label>Window</label>
+        <div class="inline"><select id="window" data-key="window"></select><button id="refresh" class="btn" title="Refresh">&#8635;</button></div>
+      </div>
+      <div id="p-region" class="panel">
+        <label>Display</label>
+        <select id="monitor2" data-key="monitor" data-type="int"></select>
+        <label>Region</label>
+        <div class="xywh">
+          <span>X</span><input type="number" min="0" data-key="regionX" data-type="int" />
+          <span>Y</span><input type="number" min="0" data-key="regionY" data-type="int" />
+          <span>W</span><input type="number" min="2" data-key="regionW" data-type="int" />
+          <span>H</span><input type="number" min="2" data-key="regionH" data-type="int" />
+          <button id="pick" class="btn">Select&hellip;</button>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Output</legend>
+      <div class="panel">
+        <label>Resolution</label><select id="res" data-key="res" data-type="int"></select>
+        <label>Frame rate</label><select id="fps" data-key="fps" data-type="int"></select>
+      </div>
+      <p id="summary" class="summary"></p>
+    </fieldset>
+  </main>
+
+  <div class="statusbar">
+    <span id="status">Ready</span>
+    <span id="timer">00:00:00</span>
+    <span id="size">0 KB</span>
+  </div>
+
+  <div id="modal" hidden>
+    <div class="dialog">
+      <div class="tabs" id="tabs">
+        <button data-tab="video">Video</button><button data-tab="audio">Audio</button>
+        <button data-tab="cursor">Cursor</button><button data-tab="overlay">Overlay</button>
+        <button data-tab="hotkeys">Hotkeys</button><button data-tab="program">Program</button>
+      </div>
+
+      <section data-pane="video">
+        <div class="f"><label>Codec</label><select data-key="codec"><option value="h264">H.264 (compatible)</option><option value="hevc">HEVC (smaller files)</option></select></div>
+        <div class="f"><label>Quality</label><div class="inline"><select id="quality" data-key="quality"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+          <label class="chk"><input type="checkbox" data-key="custom" data-type="bool" /> Custom</label></div></div>
+        <div class="f" id="f-mbps"><label>Bitrate</label><div class="inline"><input type="range" min="0.5" max="100" step="0.5" data-key="mbps" data-type="float" /><b id="mbps-val"></b></div></div>
+        <label class="chk"><input type="checkbox" data-key="compat" data-type="bool" /> Smooth mode (constant frame rate, correct colors). Keep on.</label>
+        <p class="hint">Region, audio and overlays always use Smooth mode.</p>
+      </section>
+
+      <section data-pane="audio">
+        <label class="chk"><input type="checkbox" data-key="audioMic" data-type="bool" /> Record microphone</label>
+        <div class="f"><label>Device</label><select id="mic" data-key="micDevice"></select></div>
+        <label class="chk"><input type="checkbox" data-key="audioSystem" data-type="bool" /> Record system sound (what you hear)</label>
+      </section>
+
+      <section data-pane="cursor">
+        <label class="chk"><input type="checkbox" data-key="cursor" data-type="bool" /> Show mouse cursor</label>
+        <label class="chk"><input type="checkbox" data-key="border" data-type="bool" /> Show yellow capture border</label>
+      </section>
+
+      <section data-pane="overlay">
+        <label class="chk"><input type="checkbox" data-key="timestamp" data-type="bool" /> Add date &amp; time stamp</label>
+        <div class="f"><label>Caption</label><input type="text" data-key="caption" maxlength="40" placeholder="Optional text (A-Z, 0-9, - : . / _)" /></div>
+        <div class="f"><label>Position</label><select data-key="overlayPos"><option value="tl">Top left</option><option value="tr">Top right</option><option value="bl">Bottom left</option><option value="br">Bottom right</option></select></div>
+        <div class="f"><label>Size</label><select data-key="overlayScale" data-type="int"><option value="1">Small</option><option value="2">Medium</option><option value="3">Large</option></select></div>
+      </section>
+
+      <section data-pane="hotkeys">
+        <div class="f"><label>Record / Stop</label><select id="hk-rec" data-key="hkRec"></select></div>
+        <div class="f"><label>Pause / Resume</label><select id="hk-pause" data-key="hkPause"></select></div>
+        <p class="hint">Global keys: they work while another app is focused.</p>
+      </section>
+
+      <section data-pane="program">
+        <div class="f"><label>Save to</label><div class="inline"><input type="text" data-key="folder" spellcheck="false" /><button id="browse" class="btn">Browse</button></div></div>
+        <div class="f"><label>Countdown</label><select data-key="countdown" data-type="int"><option value="0">Off</option><option value="1">3 seconds</option><option value="2">5 seconds</option><option value="3">10 seconds</option></select></div>
+        <label class="chk"><input type="checkbox" data-key="minimize" data-type="bool" /> Minimize SimpleCam while recording</label>
+        <label class="chk"><input type="checkbox" data-key="onTop" data-type="bool" data-free="1" /> Keep SimpleCam on top</label>
+        <label class="chk"><input type="checkbox" data-key="openAfter" data-type="bool" /> Play the video when recording stops</label>
+      </section>
+
+      <div class="dlg-foot"><button id="close-modal" class="btn primary">OK</button></div>
+    </div>
+  </div>
+
+  <div id="overlay" hidden><span id="overlay-num">3</span></div>
+  <script src="main.js"></script>
+</body>
+</html>
