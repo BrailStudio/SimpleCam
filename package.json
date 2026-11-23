@@ -1,0 +1,16 @@
+{
+  "name": "simplecam",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SimpleCam - simple, lightweight portable screen recorder for Windows (Tauri 2 + Rust)",
+  "license": "MIT",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon app-icon.png",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

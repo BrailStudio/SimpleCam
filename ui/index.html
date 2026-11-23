@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SimpleCam</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <img src="logo.png" alt="" class="logo" />
+    <div><h1>SimpleCam <small>1.0</small></h1><p>Simple, lightweight screen recorder</p></div>
+    <span id="badge" class="badge">Ready</span>
+  </header>
+
+  <main class="grid">
+    <!-- CAPTURE -->
+    <fieldset>
+      <legend>Capture</legend>
+      <div class="radios" id="modes">
+        <label><input type="radio" name="source" value="screen" /> Monitor</label>
+        <label><input type="radio" name="source" value="window" /> Window</label>
+        <label><input type="radio" name="source" value="region" /> Region</label>
+      </div>
+      <div class="row" id="r-monitor"><span>Display</span><select id="monitor" data-key="monitor" data-type="int"></select></div>
+      <div class="row" id="r-window"><span>Window</span><div class="inline"><select id="window" data-key="window"></select><button id="refresh" class="btn sm" title="Refresh list">&#8635;</button></div></div>
+      <div class="row" id="r-region"><span>Region</span>
+        <div class="xywh">
+          <input type="number" min="0" data-key="regionX" data-type="int" title="X" />
+          <input type="number" min="0" data-key="regionY" data-type="int" title="Y" />
+          <input type="number" min="2" data-key="regionW" data-type="int" title="Width" />
+          <input type="number" min="2" data-key="regionH" data-type="int" title="Height" />
+          <button id="pick" class="btn sm">Select</button>
+        </div></div>
+      <label class="chk"><input type="checkbox" data-key="cursor" data-type="bool" /> Mouse Cursor</label>
+      <label class="chk"><input type="checkbox" data-key="border" data-type="bool" /> Show Recording Border</label>
+    </fieldset>
+
+    <!-- OUTPUT -->
+    <fieldset>
+      <legend>Output</legend>
+      <div class="inline"><input type="text" data-key="folder" spellcheck="false" /><button id="browse" class="btn sm">&hellip;</button></div>
+      <label class="chk"><input type="checkbox" data-key="openAfter" data-type="bool" /> Open When Finished</label>
+      <div class="lim"><label class="chk"><input type="checkbox" data-key="limitOn" data-type="bool" /> Limit Length (seconds)</label><input type="number" min="1" data-key="limitSecs" data-type="int" id="limitSecs" /></div>
+      <div class="lim"><label class="chk"><input type="checkbox" data-key="limitMbOn" data-type="bool" /> Limit Size (MB)</label><input type="number" min="1" data-key="limitMb" data-type="int" id="limitMb" /></div>
+      <div class="row"><span>Countdown</span>
+        <select data-key="countdown" data-type="int"><option value="0">Off</option><option value="1">3 seconds</option><option value="2">5 seconds</option><option value="3">10 seconds</option></select></div>
+      <label class="chk"><input type="checkbox" data-key="minimize" data-type="bool" /> Minimize While Recording</label>
+      <label class="chk"><input type="checkbox" data-key="onTop" data-type="bool" data-free="1" /> Keep SimpleCam On Top</label>
+    </fieldset>
+
+    <!-- VIDEO -->
+    <fieldset>
+      <legend>Video</legend>
+      <div class="row"><span>Preset</span><select id="preset">
+        <option value="">Custom</option><option value="tiny">Tiny &ndash; 360p 15 fps</option><option value="standard">Standard &ndash; 720p 30 fps</option>
+        <option value="high">High &ndash; 1080p 30 fps</option><option value="smooth">Smooth &ndash; 1080p 60 fps</option><option value="ultra">Ultra &ndash; 4K 30 fps</option></select></div>
+      <div class="row"><span>Resolution</span><select id="res" data-key="res" data-type="int"></select></div>
+      <div class="row"><span>Framerate</span><select id="fps" data-key="fps" data-type="int"></select></div>
+      <div class="row"><span>Codec</span><select data-key="codec"><option value="h264">H.264 / AVC</option><option value="hevc">H.265 / HEVC</option></select></div>
+      <div class="row"><span>Quality</span><select data-key="quality"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+      <div class="row"><span>Bitrate (kbit/s)</span><input type="number" min="0" step="100" data-key="bitrate" data-type="int" placeholder="0 = auto" /></div>
+      <p id="summary" class="hint"></p>
+    </fieldset>
+
+    <!-- AUDIO -->
+    <fieldset>
+      <legend>Audio</legend>
+      <label class="chk"><input type="checkbox" data-key="audioSystem" data-type="bool" /> Capture System Audio</label>
+      <div class="row"><span>Volume</span><div class="inline"><input type="range" min="0" max="200" step="5" data-key="sysGain" data-type="int" /><b id="sysGainV"></b></div></div>
+      <label class="chk"><input type="checkbox" data-key="audioMic" data-type="bool" /> Capture Microphone</label>
+      <div class="row"><span>Device</span><select id="mic" data-key="micDevice"></select></div>
+      <div class="row"><span>Volume</span><div class="inline"><input type="range" min="0" max="200" step="5" data-key="micGain" data-type="int" /><b id="micGainV"></b></div></div>
+      <div class="row"><span>Codec</span><select disabled><option>AAC</option></select></div>
+      <div class="row"><span>Channels / Rate</span><select disabled><option>2 / 48000 Hz</option></select></div>
+      <div class="row"><span>Bitrate (kbit/s)</span><select data-key="audioKbps" data-type="int"><option>96</option><option>128</option><option>160</option><option>192</option></select></div>
+    </fieldset>
+
+    <!-- OVERLAY -->
+    <fieldset>
+      <legend>Overlay</legend>
+      <label class="chk"><input type="checkbox" data-key="timestamp" data-type="bool" /> Date &amp; Time Stamp</label>
+      <div class="row"><span>Caption</span><input type="text" data-key="caption" maxlength="40" placeholder="A-Z 0-9 - : . / _" /></div>
+      <div class="row"><span>Position</span><select data-key="overlayPos"><option value="tl">Top left</option><option value="tr">Top right</option><option value="bl">Bottom left</option><option value="br">Bottom right</option></select></div>
+      <div class="row"><span>Size</span><select data-key="overlayScale" data-type="int"><option value="1">Small</option><option value="2">Medium</option><option value="3">Large</option></select></div>
+    </fieldset>
+
+    <!-- SHORTCUTS -->
+    <fieldset>
+      <legend>Shortcuts</legend>
+      <div class="sc"><button class="btn" data-go="screen">Capture Monitor</button><input type="text" data-key="hkMonitor" data-evt="change" spellcheck="false" /></div>
+      <div class="sc"><button class="btn" data-go="window">Capture Window</button><input type="text" data-key="hkWindow" data-evt="change" spellcheck="false" /></div>
+      <div class="sc"><button class="btn" data-go="region">Capture Region</button><input type="text" data-key="hkRegion" data-evt="change" spellcheck="false" /></div>
+      <div class="sc"><button class="btn" data-go="pause">Pause / Resume</button><input type="text" data-key="hkPause" data-evt="change" spellcheck="false" /></div>
+      <p class="hint">Press a capture key again to stop. Window capture records the app you are using.</p>
+    </fieldset>
+  </main>
+
+  <footer class="bar">
+    <button id="btn-rec" class="act rec"><i class="d"></i>Record</button>
+    <button id="btn-pause" class="act"><i class="p"></i><span id="pause-label">Pause</span></button>
+    <button id="btn-stop" class="act"><i class="s"></i>Stop</button>
+    <div class="info"><span id="status">Ready</span></div>
+    <span id="timer" class="timer">00:00:00</span>
+    <span id="size" class="size">0 KB</span>
+    <button id="defaults" class="btn">Defaults</button>
+  </footer>
+
+  <div id="overlay" hidden><span id="overlay-num">3</span></div>
+  <script src="main.js"></script>
+</body>
+</html>
